@@ -33,12 +33,35 @@ git push origin v1.0.0
 ```
 Esto crea automáticamente un Release en GitHub con el APK adjunto.
 
-## Conectar Supabase
+## Conectar Supabase (ya está integrado, solo falta configurar)
 
-Este proyecto no incluye aún el cliente de Supabase. Cuando quieras integrarlo:
-1. Agrega el SDK de Supabase JS en `www/index.html` (via CDN o npm).
-2. Guarda tu URL y anon key de Supabase — puedes dejarlas directo en el HTML (son públicas por diseño) o usarlas como variables si prefieres.
-3. No afecta el build del APK: Supabase es un servicio que la app consume en tiempo de ejecución, no algo que se compile.
+El HTML ya trae el cliente de Supabase y el autoguardado en la nube. Solo te faltan 3 pasos:
+
+1. **Crea el proyecto**: entra a [supabase.com](https://supabase.com), crea una cuenta y un proyecto nuevo (gratis).
+2. **Crea la tabla**: en tu proyecto, ve a **SQL Editor → New query**, pega el contenido de `supabase_setup.sql` (incluido en este repo) y dale **Run**. Eso crea la tabla `estados_7cash`.
+3. **Conecta las credenciales**: en tu proyecto de Supabase ve a **Project Settings → API** y copia:
+   - **Project URL**
+   - **anon public key**
+
+   Luego en `www/index.html` busca estas dos líneas (cerca del final del `<script>`) y reemplázalas:
+   ```js
+   const SUPABASE_URL = 'TU_SUPABASE_URL';
+   const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+   ```
+
+Sube el cambio (`git add . && git commit -m "conectar supabase" && git push`) y el workflow te genera un nuevo APK con la nube activada.
+
+### Cómo funciona
+
+- Se guarda automáticamente **cuando inicias sesión con Google** (real o demo) en la app.
+- Cada vez que registras una venta, un gasto, cambias la distribución, etc., se guarda solo (con un pequeño retraso de ~1 segundo).
+- Al volver a abrir la app y loguearte, carga automáticamente lo último guardado en la nube.
+- Usa tu **correo de Google como identificador** — todo lo tuyo se guarda en una sola fila de la tabla `estados_7cash`, en la columna `data` (mismo formato que ya usa el botón "Descargar" de respaldo).
+- Si cierras sesión, la app sigue funcionando en modo local (sin nube) igual que antes.
+
+### Nota de seguridad
+
+La política SQL incluida deja leer/escribir la tabla a cualquiera que tenga tu `anon key` (que va dentro del APK). Para un uso personal esto es aceptable — nadie más tiene tu APK. Si en algún momento compartes la app con otras personas y quieres que cada quien vea *solo* sus propios datos de forma segura, se puede migrar a un login real de Supabase (Auth) con políticas por usuario; avísame si llegas a ese punto y lo armamos.
 
 ## Login con Google
 

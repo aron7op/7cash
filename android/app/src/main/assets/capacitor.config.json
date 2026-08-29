@@ -2,5 +2,14 @@
 	"appId": "com.sietecash.app",
 	"appName": "7Cash",
 	"webDir": "www",
-	"bundledWebRuntime": false
+	"plugins": {
+		"GoogleAuth": {
+			"scopes": [
+				"profile",
+				"email"
+			],
+			"serverClientId": "154818877807-o5opqqjbgvuoa1bent5rjsupi0ua3pgt.apps.googleusercontent.com",
+			"forceCodeForRefreshToken": true
+		}
+	}
 }

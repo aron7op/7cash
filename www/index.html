@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Google Identity Services: habilita el botón real de "Continuar con Google" cuando configures tu Client ID en el script -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Supabase: guarda y carga tus datos en la nube. Configura SUPABASE_URL y SUPABASE_ANON_KEY más abajo en el script -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root{
     --bg:#FBF1E3;
@@ -618,6 +620,10 @@
           <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('importInput').click()">Cargar</button>
         </div>
         <input type="file" id="importInput" accept="application/json" onchange="importarDatos(event)">
+        <div id="nubeEstado" style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+          <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 10px; line-height:1.5;" id="nubeEstadoTexto">Inicia sesión para sincronizar tus datos con la nube.</p>
+          <button class="btn btn-ghost" style="width:100%; display:none;" id="nubeSyncBtn" onclick="guardarEnNube(true)">Sincronizar ahora</button>
+        </div>
       </section>
 
     </section>
@@ -966,6 +972,7 @@ function registrarVenta(e){
   document.getElementById('formError').style.display = 'none';
   showToast('Venta registrada — S/ ' + calc.ganancia.toFixed(2) + ' de ganancia');
   renderResumen();
+  programarGuardadoNube();
   return false;
 }
 
@@ -984,6 +991,7 @@ function eliminarProducto(id){
   renderResumen();
   if (activeTab === 'categorias') renderCategoria(activeCatSubTab);
   if (activeTab === 'dinero') renderDinero();
+  programarGuardadoNube();
 }
 
 /* ---------------- SPLIT BAR ---------------- */
@@ -1120,6 +1128,7 @@ function toggleBankLock(key){
     if (confirm('¿Seguro que quieres desbloquear el nombre de la cuenta bancaria de ' + CATS[key].label + ' para editarlo o borrarlo?')){
       bancosLocked[key] = false;
       renderCategoria(key);
+      programarGuardadoNube();
     }
     return;
   }
@@ -1130,6 +1139,7 @@ function toggleBankLock(key){
   bancosLocked[key] = true;
   showToast('Cuenta bancaria bloqueada');
   renderCategoria(key);
+  programarGuardadoNube();
 }
 
 /* ---------------- RENDER: CATEGORIA ---------------- */
@@ -1259,6 +1269,7 @@ function registrarGasto(e, key){
 
   showToast('Gasto registrado en ' + CATS[key].label);
   renderCategoria(key);
+  programarGuardadoNube();
   return false;
 }
 
@@ -1266,6 +1277,7 @@ function eliminarGasto(key, id){
   gastos[key] = gastos[key].filter(g => g.id !== id);
   showToast('Gasto eliminado');
   renderCategoria(key);
+  programarGuardadoNube();
 }
 
 /* ---------------- RENDER: AGREGAR DINERO ---------------- */
@@ -1385,6 +1397,7 @@ function guardarDistribucion(){
     config[key] = parseFloat(document.getElementById('pct-' + key).value) || 0;
   });
   showToast('Distribución guardada — se aplicará a tus próximas ventas');
+  programarGuardadoNube();
 }
 
 /* ---------------- FEED DE PRODUCTOS ---------------- */
@@ -1525,12 +1538,112 @@ function importarDatos(evt){
       showToast('Datos cargados: ' + productos.length + ' venta(s)');
       renderResumen();
       if (activeTab === 'categorias') renderCategoria(activeCatSubTab);
+      programarGuardadoNube();
     } catch(err){
       showToast('No se pudo leer el archivo');
     }
     evt.target.value = '';
   };
   reader.readAsText(file);
+}
+
+/* ---------------- SUPABASE (nube) ---------------- */
+// 1) Crea un proyecto gratis en https://supabase.com
+// 2) Ve a Project Settings -> API y copia "Project URL" y "anon public key"
+// 3) Pega esos dos valores aquí abajo
+// 4) Corre en el SQL Editor de Supabase el script que te compartí (crea la tabla estados_7cash)
+const SUPABASE_URL = 'https://ztuonpdjrkxalschwtyr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0dW9ucGRqcmt4YWxzY2h3dHlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMDkxOTYsImV4cCI6MjEwMzU4NTE5Nn0.T5fOeEiVgIaJ6RGOMXZAOKMK6EgW9lIgjESOUzdeDpk';
+
+let supabaseClient = null;
+if (window.supabase && !SUPABASE_URL.startsWith('TU_SUPABASE')) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+let nubeSyncTimer = null;
+let nubeSincronizando = false;
+
+function nubeDisponible(){
+  return !!(supabaseClient && currentUser && currentUser.correo);
+}
+
+function actualizarNubeUI(texto){
+  const textoEl = document.getElementById('nubeEstadoTexto');
+  const btnEl = document.getElementById('nubeSyncBtn');
+  if (!textoEl || !btnEl) return;
+  if (!supabaseClient){
+    textoEl.textContent = 'Nube no configurada aún (falta SUPABASE_URL / SUPABASE_ANON_KEY en el código).';
+    btnEl.style.display = 'none';
+    return;
+  }
+  if (!currentUser){
+    textoEl.textContent = 'Inicia sesión para sincronizar tus datos con la nube.';
+    btnEl.style.display = 'none';
+    return;
+  }
+  btnEl.style.display = 'block';
+  textoEl.textContent = texto || ('Sincronizado como ' + currentUser.correo);
+}
+
+// Se llama automáticamente después de cada cambio (venta, gasto, config, etc.)
+function programarGuardadoNube(){
+  if (!nubeDisponible()) return;
+  clearTimeout(nubeSyncTimer);
+  actualizarNubeUI('Guardando cambios…');
+  nubeSyncTimer = setTimeout(() => guardarEnNube(false), 1200);
+}
+
+async function guardarEnNube(manual){
+  if (!nubeDisponible()){
+    if (manual) showToast('Inicia sesión primero para sincronizar');
+    return;
+  }
+  if (nubeSincronizando) return;
+  nubeSincronizando = true;
+  const payload = { productos, gastos, bancos, bancosLocked, config };
+  const { error } = await supabaseClient
+    .from('estados_7cash')
+    .upsert({ id: currentUser.correo, data: payload, updated_at: new Date().toISOString() });
+  nubeSincronizando = false;
+  if (error){
+    console.error(error);
+    actualizarNubeUI('No se pudo guardar en la nube');
+    if (manual) showToast('Error al sincronizar');
+  } else {
+    actualizarNubeUI();
+    if (manual) showToast('Datos sincronizados con la nube');
+  }
+}
+
+async function cargarDeNube(){
+  if (!nubeDisponible()) return;
+  actualizarNubeUI('Buscando tus datos en la nube…');
+  const { data, error } = await supabaseClient
+    .from('estados_7cash')
+    .select('data')
+    .eq('id', currentUser.correo)
+    .maybeSingle();
+  if (error){
+    console.error(error);
+    actualizarNubeUI('No se pudo cargar desde la nube');
+    return;
+  }
+  if (data && data.data){
+    const d = data.data;
+    productos = Array.isArray(d.productos) ? d.productos : [];
+    gastos = Object.assign({ reinvertir: [], imprevistos: [], ahorro: [], invertir: [], sueldo: [] }, d.gastos || {});
+    bancos = Object.assign({ reinvertir: '', imprevistos: '', ahorro: '', invertir: '', sueldo: '' }, d.bancos || {});
+    bancosLocked = Object.assign({ reinvertir: false, imprevistos: false, ahorro: false, invertir: false, sueldo: false }, d.bancosLocked || {});
+    config = Object.assign({ reinvertir: 30, imprevistos: 10, ahorro: 20, invertir: 20, sueldo: 20 }, d.config || {});
+    renderResumen();
+    if (activeTab === 'categorias') renderCategoria(activeCatSubTab);
+    showToast('Datos cargados desde la nube');
+    actualizarNubeUI();
+  } else {
+    // No hay datos previos en la nube todavía: sube lo que tengas ahora
+    actualizarNubeUI();
+    guardarEnNube(false);
+  }
 }
 
 /* ---------------- LOGIN / CUENTA (Google) ---------------- */
@@ -1558,6 +1671,7 @@ function handleGoogleCredential(response){
     currentUser = { nombre: payload.name, correo: payload.email, foto: payload.picture };
     showToast('Sesión iniciada con Google');
     renderLogin();
+    cargarDeNube();
   } catch(err){
     showToast('No se pudo iniciar sesión');
   }
@@ -1567,6 +1681,7 @@ function simulateGoogleLogin(){
   currentUser = { nombre: 'Usuario Demo', correo: 'demo@gmail.com', foto: '' };
   showToast('Sesión iniciada (demo)');
   renderLogin();
+  cargarDeNube();
 }
 
 function cerrarSesion(){
@@ -1574,6 +1689,7 @@ function cerrarSesion(){
   if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   showToast('Sesión cerrada');
   renderLogin();
+  actualizarNubeUI();
 }
 
 function renderLogin(){
@@ -1609,6 +1725,7 @@ buildNav();
 renderResumen();
 renderFeedDatalist();
 renderLogin();
+actualizarNubeUI();
 </script>
 </body>
 </html>

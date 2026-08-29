@@ -71,6 +71,24 @@ const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 ```
 por tu Client ID real, generado en https://console.cloud.google.com/apis/credentials. Para que funcione en la app empaquetada (APK), en Google Cloud Console deberás registrar también el paquete Android (`com.sietecash.app`) y su huella SHA-1, según la guía de Google Identity para apps nativas.
 
+## Publicar en Google Play Store (.aab firmado)
+
+Para que GitHub Actions pueda generar el `.aab` firmado con tu llave de producción, sin exponerla en el código, hay que guardarla como **GitHub Secrets** (variables privadas del repo):
+
+1. En tu repo de GitHub: **Settings → Secrets and variables → Actions → New repository secret**.
+2. Crea estos 4 secrets (uno por uno):
+   - `RELEASE_KEYSTORE_BASE64` → pega el contenido completo del archivo `7cash-release-keystore-base64.txt` que te dio Claude.
+   - `RELEASE_KEYSTORE_PASSWORD` → la contraseña que está en `7cash-release-INFO-IMPORTANTE.txt`.
+   - `RELEASE_KEY_ALIAS` → `7cash`
+   - `RELEASE_KEY_PASSWORD` → la misma contraseña que `RELEASE_KEYSTORE_PASSWORD`.
+3. Sube (push) cualquier cambio para disparar el workflow. Ahora, además del APK debug, te va a generar:
+   - `7cash-release-aab` → **este es el que subes a Play Store**.
+   - `7cash-release-apk` → una copia firmada en .apk, por si la necesitas fuera de Play Store.
+
+**MUY IMPORTANTE:** guarda el archivo `7cash-release.keystore` y su contraseña en un lugar seguro fuera de GitHub (Google Drive, USB, etc.). Es la llave que identifica tu app para siempre ante Play Store — si la pierdes, no podrás subir actualizaciones nunca más, solo publicar la app como si fuera nueva.
+
+Antes de cada nueva subida a Play Store, sube el número de versión en `android/app/build.gradle` (`versionCode` +1 y `versionName` al gusto) — Play Store no acepta subir el mismo número dos veces.
+
 ## Cambiar nombre/ícono de la app
 
 - Nombre: `capacitor.config.json` → `appName`.

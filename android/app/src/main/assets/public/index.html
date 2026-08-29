@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>7Cash — Control de ventas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Google Identity Services: habilita el botón real de "Continuar con Google" cuando configures tu Client ID en el script -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --bg:#FBF1E3;
+    --bg-elev:#FFFDF8;
+    --card:#FFFFFF;
+    --card-2:#FFF8EC;
+    --border:rgba(28,43,72,0.14);
+    --border-soft:rgba(28,43,72,0.08);
+    --gold:#F3A15A;
+    --gold-soft:#F7BE85;
+    --emerald:#1F8478;
+    --text:#1C2B48;
+    --text-dim:#75809A;
+    --text-faint:#B7AEA0;
+    --c-reinvertir:#1F8478;
+    --c-imprevistos:#E15C6D;
+    --c-ahorro:#5A6EE0;
+    --c-invertir:#D9A441;
+    --c-sueldo:#9C5FA8;
+    --danger:#E15C6D;
+    --radius:22px;
+    --radius-sm:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgba(243,161,90,0.14), transparent 60%),
+      radial-gradient(90% 50% at 100% 0%, rgba(31,132,120,0.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', -apple-system, sans-serif;
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  /* ---------- TOPBAR ---------- */
+  .topbar{
+    padding:22px 20px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:linear-gradient(180deg, rgba(251,241,227,0.97) 70%, rgba(251,241,227,0));
+    backdrop-filter:blur(10px);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand-mark{
+    width:36px;height:36px;
+    border-radius:12px;
+    background:linear-gradient(150deg, var(--gold-soft), var(--gold) 65%, #d97f36);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(243,161,90,0.4);
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:18px;height:18px;}
+  .brand-name{
+    font-family:'Baloo 2', sans-serif;
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:0.1px;
+    color:var(--text);
+  }
+  .brand-sub{
+    font-size:10.5px;
+    color:var(--text-dim);
+    letter-spacing:1.2px;
+    text-transform:uppercase;
+    margin-top:1px;
+    font-weight:600;
+  }
+  .backup-btn{
+    width:38px;height:38px;
+    border-radius:12px;
+    background:var(--card);
+    border:1px solid var(--border-soft);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text);
+    box-shadow:0 3px 10px rgba(28,43,72,0.06);
+  }
+
+  main{
+    flex:1;
+    padding:6px 20px 110px;
+    overflow-y:auto;
+  }
+  .view{ display:none; animation:fadeIn 0.35s ease; }
+  .view.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  section.card{
+    background:linear-gradient(160deg, var(--card-2), var(--card));
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:16px;
+    box-shadow:0 10px 28px rgba(28,43,72,0.05);
+  }
+  .eyebrow{
+    font-size:10.5px;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  h1.page-title{
+    font-family:'Baloo 2', sans-serif;
+    font-size:25px;
+    font-weight:700;
+    margin:4px 0 18px;
+    color:var(--text);
+  }
+
+  /* ---------- SECTION HEADER (título + botón redondo) ---------- */
+  .section-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:6px 0 14px;
+  }
+  .section-header h2{
+    font-family:'Baloo 2', sans-serif; font-weight:700; font-size:19px;
+    color:var(--text); margin:0;
+  }
+  .icon-btn-circle{
+    width:42px;height:42px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(150deg, var(--emerald), #146059);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 18px rgba(31,132,120,0.35);
+    border:none;
+  }
+  .icon-btn-circle svg{ width:18px; height:18px; }
+
+  /* ---------- HERO / RESUMEN ---------- */
+  .hero{
+    padding:28px 24px 24px;
+    border-radius:28px;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,0.22), transparent 55%),
+      linear-gradient(150deg, #F6B372, #ED8E52 65%, #E17C46);
+    margin:10px 0 18px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 16px 34px rgba(237,142,82,0.35);
+  }
+  .hero-label{ font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color:rgba(255,255,255,0.85); font-weight:700;}
+  .hero-amount{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:38px;
+    font-weight:600;
+    letter-spacing:-0.5px;
+    margin:6px 0 4px;
+    color:#fff;
+  }
+  .hero-foot{ font-size:12.5px; color:rgba(255,255,255,0.78); }
+  .hero-row{
+    display:flex; gap:22px; margin-top:16px; padding-top:14px;
+    border-top:1px solid rgba(255,255,255,0.25);
+  }
+  .hero-stat .n{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:600; color:#fff;}
+  .hero-stat .l{ font-size:10.5px; color:rgba(255,255,255,0.72); margin-top:2px;}
+
+  /* ---------- CATEGORÍAS: vista rápida (Resumen) ---------- */
+  .cat-rows{ display:flex; flex-direction:column; margin-bottom:22px; }
+  .cat-row-item{
+    display:flex; align-items:center; gap:13px;
+    padding:11px 4px;
+  }
+  .cat-row-icon{
+    width:42px;height:42px; border-radius:14px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+  }
+  .cat-row-icon svg{ width:19px; height:19px; }
+  .cat-row-mid{ flex:1; min-width:0; }
+  .cat-row-title{ font-family:'Baloo 2', sans-serif; font-size:14.5px; font-weight:700; color:var(--text); }
+  .cat-row-sub{ font-size:11.5px; color:var(--text-dim); margin-top:1px; }
+  .cat-row-amt{ font-family:'IBM Plex Mono', monospace; font-size:13.5px; font-weight:700; color:var(--text); flex-shrink:0; }
+
+  .cat-quick-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    margin-bottom:22px;
+  }
+  .cat-quick-card{
+    border-radius:22px; padding:18px; color:#fff; position:relative; overflow:hidden;
+    min-height:148px; display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow:0 12px 24px rgba(28,43,72,0.12);
+  }
+  .ring-wrap{ width:54px; height:54px; position:relative; }
+  .ring-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .ring-pct{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:12.5px; color:#fff;
+  }
+  .cq-title{ font-family:'Baloo 2', sans-serif; font-weight:700; font-size:14.5px; margin-top:12px; line-height:1.2;}
+  .cq-sub{ font-size:10.5px; color:rgba(255,255,255,0.82); margin-top:2px; }
+
+  /* ---------- FORM ---------- */
+  label{
+    display:block;
+    font-size:11.5px;
+    color:var(--text-dim);
+    margin:14px 0 6px;
+    font-weight:700;
+  }
+  label:first-of-type{ margin-top:0; }
+  .costo-venta-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .costo-venta-row label{ margin-top:14px; }
+  .input-wrap{ position:relative; }
+  .prefix{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    color:var(--text-faint); font-family:'IBM Plex Mono', monospace; font-size:14px;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    background:var(--bg-elev);
+    border:1px solid var(--border-soft);
+    color:var(--text);
+    border-radius:var(--radius-sm);
+    padding:13px 14px;
+    font-size:15px;
+    font-family:'Inter', sans-serif;
+    outline:none;
+    transition:border-color 0.2s;
+  }
+  input.with-prefix{ padding-left:34px; font-family:'IBM Plex Mono', monospace; }
+  input:focus{ border-color:var(--emerald); }
+  .btn{
+    width:100%;
+    border:none;
+    border-radius:var(--radius-sm);
+    padding:15px;
+    font-size:14.5px;
+    font-weight:700;
+    font-family:'Inter', sans-serif;
+    letter-spacing:0.2px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn-primary{
+    margin-top:20px;
+    background:linear-gradient(135deg, var(--emerald), #146059);
+    color:#fff;
+    box-shadow:0 10px 22px rgba(31,132,120,0.32);
+  }
+  .btn-primary:active{ transform:scale(0.98); }
+  .btn-ghost{
+    background:var(--bg-elev);
+    border:1px solid var(--border-soft);
+    color:var(--text);
+  }
+  .field-error{ font-size:12px; color:var(--danger); margin-top:6px; display:none;}
+
+  /* ---------- SPLIT BAR (signature element) ---------- */
+  .split-bar{
+    display:flex;
+    width:100%;
+    height:14px;
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--bg-elev);
+    border:1px solid var(--border-soft);
+    margin:14px 0 14px;
+  }
+  .split-seg{ height:100%; transition:width 0.7s cubic-bezier(.2,.8,.2,1); }
+  .split-legend{ display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:2px;}
+  .split-legend .item{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-dim);}
+  .split-legend .dot{ width:8px;height:8px;border-radius:50%; flex-shrink:0;}
+  .split-legend .amt{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-weight:600; margin-left:2px;}
+
+  /* ---------- DETALLE AUTOMATICO ---------- */
+  .detail-title{ font-family:'Baloo 2', sans-serif; font-size:17px; font-weight:700; margin-bottom:2px; color:var(--text);}
+  .detail-sub{ font-size:12px; color:var(--text-dim); margin-bottom:4px;}
+  .detail-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .stat-box{
+    background:var(--bg-elev);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm);
+    padding:12px 13px;
+  }
+  .stat-box .k{ font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.6px; font-weight:600;}
+  .stat-box .v{ font-family:'IBM Plex Mono', monospace; font-size:15.5px; font-weight:600; margin-top:4px; color:var(--text);}
+  .stat-box.wide{ grid-column:1 / -1; background:linear-gradient(120deg, rgba(31,132,120,0.14), rgba(31,132,120,0.03)); border-color:rgba(31,132,120,0.28);}
+  .stat-box.wide .v{ color:var(--emerald); font-size:19px;}
+  .empty{
+    text-align:center;
+    padding:38px 16px;
+    color:var(--text-dim);
+  }
+  .empty-blob{
+    width:84px; height:84px; margin:0 auto 14px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .empty-blob .ring{ position:absolute; inset:0; width:100%; height:100%; }
+  .empty-blob .ico{ width:32px; height:32px; position:relative; z-index:1; }
+  .empty-blob .ico svg{ width:100%; height:100%; }
+  .empty .t{ font-size:14px; color:var(--text); font-weight:700; margin-bottom:4px;}
+  .empty .s{ font-size:12.5px; line-height:1.5;}
+
+  /* ---------- DOODLES / ILUSTRACIONES ---------- */
+  .hero-doodle{ position:absolute; top:0; right:0; width:150px; height:150px; opacity:0.9; pointer-events:none; }
+  .login-illus{ width:104px; height:104px; margin:4px auto 16px; display:block; }
+
+  /* ---------- HISTORIAL ---------- */
+  .hist-item{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 4px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .hist-item:last-child{ border-bottom:none; }
+  .hist-icon{
+    width:40px;height:40px; border-radius:13px; flex-shrink:0;
+    background:var(--bg-elev); border:1px solid var(--border-soft); display:flex; align-items:center; justify-content:center;
+    color:var(--gold);
+  }
+  .hist-mid{ flex:1; min-width:0; }
+  .hist-name{ font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hist-date{ font-size:11px; color:var(--text-dim); margin-top:1px;}
+  .hist-right{ text-align:right; flex-shrink:0;}
+  .hist-gan{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; color:var(--emerald);}
+  .hist-gan.neg{ color:var(--danger); }
+  .hist-del{ background:none; border:none; color:var(--text-faint); padding:4px; margin-left:6px; flex-shrink:0;}
+  .hist-del:hover{ color:var(--danger); }
+
+  /* ---------- HISTORIAL v2 (costo / venta / ganancia) ---------- */
+  .hist-card{ padding:13px 4px; border-bottom:1px solid var(--border-soft); }
+  .hist-card:last-child{ border-bottom:none; }
+  .hist-card .hist-top{ display:flex; align-items:center; gap:12px; }
+  .hist-stats{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+    margin:10px 0 0 52px;
+  }
+  .hist-stats .hs{
+    background:var(--bg-elev); border:1px solid var(--border-soft); border-radius:9px;
+    padding:7px 9px;
+  }
+  .hist-stats .hs-k{ display:block; font-size:9.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.4px; font-weight:600;}
+  .hist-stats .hs-v{ display:block; font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:700; margin-top:2px; color:var(--text);}
+
+  /* ---------- CUENTA BANCARIA (nombre del banco por pestaña) ---------- */
+  .bank-input-wrap{ display:flex; align-items:center; gap:10px; }
+  .bank-icon{
+    width:38px;height:38px; border-radius:12px; flex-shrink:0;
+    background:var(--bg-elev); border:1px solid var(--border-soft); display:flex; align-items:center; justify-content:center; color:var(--text);
+  }
+  input.bank-input{
+    background:transparent; border:none; border-bottom:1px solid var(--border-soft);
+    color:var(--text); font-family:'Baloo 2', sans-serif; font-size:16px; font-weight:700;
+    padding:6px 2px; width:100%; border-radius:0;
+  }
+  input.bank-input:focus{ border-color:var(--emerald); }
+  input.bank-input::placeholder{ color:var(--text-faint); font-family:'Inter', sans-serif; font-weight:500; font-size:13.5px;}
+  input.bank-input:disabled{ color:var(--text-dim); border-bottom-style:dashed; }
+  .bank-lock-btn{
+    width:36px;height:36px; border-radius:11px; flex-shrink:0;
+    background:var(--bg-elev); border:1px solid var(--border-soft); color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bank-lock-btn svg{ width:16px; height:16px; }
+  .bank-lock-btn.locked{ color:var(--gold); border-color:rgba(243,161,90,0.4); background:rgba(243,161,90,0.1);}
+  .bank-lock-note{ font-size:11px; color:var(--text-dim); margin:8px 2px 0; }
+
+  /* ---------- GASTOS ---------- */
+  .gasto-toggle-row{ display:flex; align-items:center; justify-content:space-between; }
+  .btn-add-gasto{
+    background:var(--bg-elev); border:1px solid var(--border-soft); color:var(--text);
+    font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:12px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .gasto-form{
+    margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); display:none;
+  }
+  .gasto-form.open{ display:block; }
+  .gasto-row-inputs{ display:flex; gap:10px; }
+  .gasto-row-inputs .input-wrap{ flex:1; }
+  .gasto-item{
+    display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--border-soft);
+  }
+  .gasto-item:last-child{ border-bottom:none; }
+  .gasto-icon{
+    width:34px;height:34px; border-radius:10px; flex-shrink:0;
+    background:rgba(225,92,109,0.12); display:flex; align-items:center; justify-content:center; color:var(--danger);
+  }
+
+  /* ---------- CATEGORY PAGE ---------- */
+  .cat-pills{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:6px;
+    padding:8px 0 4px;
+    margin-bottom:4px;
+  }
+  .cat-pill{
+    display:flex; align-items:center; justify-content:center;
+    padding:9px 4px; border-radius:14px; border:1px solid var(--border-soft);
+    background:var(--card); color:var(--text-dim); font-size:10.5px; font-weight:700;
+    text-align:center; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cat-pill.active{ color:#fff; border-color:transparent; }
+  .cat-hero{
+    border-radius:26px;
+    padding:24px 22px;
+    margin:10px 0 18px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 14px 30px rgba(28,43,72,0.14);
+  }
+  .cat-hero .hero-label{ color:rgba(255,255,255,0.85); }
+  .cat-hero .hero-amount{ color:#fff; }
+  .cat-hero .hero-foot{ color:rgba(255,255,255,0.7); }
+  .cat-list .hist-name{ }
+  .cat-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; color:var(--text-dim); background:var(--bg-elev);
+    padding:6px 10px; border-radius:20px; margin-bottom:14px; border:1px solid var(--border-soft);
+  }
+
+  /* ---------- AGREGAR DINERO ---------- */
+  .money-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 4px; border-bottom:1px solid var(--border-soft);
+  }
+  .money-row:last-child{ border-bottom:none; }
+  .money-left{ display:flex; align-items:center; gap:12px; }
+  .money-dot{ width:10px;height:10px;border-radius:50%; flex-shrink:0;}
+  .money-label{ font-size:13.5px; font-weight:700; color:var(--text);}
+  .money-desc{ font-size:11px; color:var(--text-dim); margin-top:1px;}
+  .money-amt{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700;}
+  .total-row{
+    margin-top:6px; padding-top:16px; border-top:1px dashed var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .total-row .money-label{ font-size:14px; }
+  .total-row .money-amt{ font-size:18px; color:var(--gold);}
+
+  /* ---------- CONFIGURACIÓN: distribución ---------- */
+  .pct-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 0; border-bottom:1px solid var(--border-soft);
+  }
+  .pct-row:last-of-type{ border-bottom:none; }
+  .pct-label{ display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:700; color:var(--text);}
+  .pct-dot{ width:10px;height:10px;border-radius:50%; flex-shrink:0; }
+  .pct-input-wrap{ position:relative; width:84px; flex-shrink:0; }
+  input.pct-input{
+    width:100%; text-align:right; padding:9px 24px 9px 10px;
+    font-family:'IBM Plex Mono', monospace; font-size:14px;
+    background:var(--bg-elev); border:1px solid var(--border-soft); border-radius:9px; color:var(--text);
+  }
+  input.pct-input:focus{ border-color:var(--emerald); }
+  .pct-suffix{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    color:var(--text-dim); font-size:13px; pointer-events:none;
+  }
+  .pct-sum{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:14px; padding-top:14px; border-top:1px dashed var(--border);
+  }
+  .pct-sum .lbl{ font-size:12.5px; color:var(--text-dim); }
+  .pct-sum .val{ font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:16px; color:var(--emerald); }
+  .pct-sum.bad .val{ color:var(--danger); }
+
+  /* ---------- CONFIGURACIÓN: feed de productos ---------- */
+  .feed-status{ font-size:12px; color:var(--text-dim); margin-top:12px; line-height:1.5; }
+  .feed-status.error{ color:var(--danger); }
+  .feed-status.success{ color:var(--emerald); }
+  .feed-row{
+    display:flex; align-items:center; gap:7px;
+    padding:11px 2px; border-bottom:1px solid var(--border-soft);
+  }
+  .feed-row:last-child{ border-bottom:none; }
+  .feed-name{
+    flex:1 1 auto; min-width:0; font-size:12px; font-weight:700; color:var(--text);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .feed-price{
+    flex-shrink:0; font-size:12px; font-weight:700; color:var(--gold);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottomnav{
+    position:fixed;
+    bottom:0; left:0; right:0;
+    display:flex;
+    justify-content:center;
+    z-index:30;
+    pointer-events:none;
+  }
+  .bottomnav-inner{
+    width:100%; max-width:480px;
+    background:rgba(255,253,248,0.94);
+    backdrop-filter:blur(14px);
+    border-top:1px solid var(--border-soft);
+    box-shadow:0 -8px 24px rgba(28,43,72,0.06);
+    display:flex;
+    overflow-x:auto;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    gap:2px;
+    pointer-events:auto;
+    scrollbar-width:none;
+  }
+  .bottomnav-inner::-webkit-scrollbar{ display:none; }
+  .navbtn{
+    background:none; border:none; color:var(--text-faint);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:7px 11px;
+    min-width:62px;
+    flex-shrink:0;
+    border-radius:14px;
+    transition:color 0.2s;
+  }
+  .navbtn svg{ width:20px; height:20px; }
+  .navbtn span{ font-size:9.5px; font-weight:700; letter-spacing:0.2px; white-space:nowrap;}
+  .navbtn.active{ color:var(--emerald); background:rgba(31,132,120,0.10); }
+
+  .toast{
+    position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(10px);
+    background:var(--text); color:#fff; padding:11px 18px; border-radius:30px;
+    font-size:13px; border:none;
+    box-shadow:0 14px 30px rgba(28,43,72,0.28);
+    opacity:0; transition:opacity 0.25s, transform 0.25s; z-index:50; pointer-events:none;
+    max-width:88%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #importInput{ display:none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1C2B48" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/><circle cx="12" cy="13.5" r="1.6" fill="#1C2B48" stroke="none"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">7Cash</div>
+        <div class="brand-sub">Control de ventas</div>
+      </div>
+    </div>
+    <button class="backup-btn" onclick="toggleBackupMenu()" aria-label="Respaldo de datos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+  </header>
+
+  <main id="content">
+
+    <!-- ================= RESUMEN ================= -->
+    <section class="view active" id="view-resumen">
+
+      <div class="hero">
+        <svg class="hero-doodle" viewBox="0 0 150 150" fill="none">
+          <circle cx="118" cy="34" r="26" fill="rgba(255,255,255,0.16)"/>
+          <circle cx="118" cy="34" r="18" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.6" stroke-dasharray="2 5"/>
+          <text x="118" y="39" text-anchor="middle" font-family="'Baloo 2', sans-serif" font-weight="700" font-size="14" fill="rgba(255,255,255,0.85)">S/</text>
+          <circle cx="86" cy="20" r="9" fill="rgba(255,255,255,0.22)"/>
+          <path d="M138 78 l4 9 9 4 -9 4 -4 9 -4-9 -9-4 9-4z" fill="rgba(255,255,255,0.4)"/>
+          <circle cx="60" cy="8" r="3" fill="rgba(255,255,255,0.5)"/>
+        </svg>
+        <div class="hero-label">Ganancia acumulada</div>
+        <div class="hero-amount" id="heroGanancia">S/ 0.00</div>
+        <div class="hero-foot" id="heroFoot">Registra tu primera venta para empezar</div>
+        <div class="hero-row">
+          <div class="hero-stat"><div class="n" id="statCount">0</div><div class="l">Productos</div></div>
+          <div class="hero-stat"><div class="n" id="statVenta">S/ 0.00</div><div class="l">Vendido</div></div>
+          <div class="hero-stat"><div class="n" id="statCosto">S/ 0.00</div><div class="l">Invertido en costo</div></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2>Tus categorías</h2>
+        <button class="icon-btn-circle" onclick="setTab('categorias')" aria-label="Ver todas las categorías">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+      </div>
+      <div class="cat-rows" id="catRowsQuick"></div>
+      <div class="cat-quick-grid" id="catQuickGrid"></div>
+
+      <section class="card" id="backupCard" style="display:none;">
+        <p class="eyebrow">Respaldo</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5;">Tus datos viven en esta sesión del navegador. Descarga un respaldo para no perderlos, o carga uno anterior.</p>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost" style="flex:1;" onclick="exportarDatos()">Descargar</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('importInput').click()">Cargar</button>
+        </div>
+        <input type="file" id="importInput" accept="application/json" onchange="importarDatos(event)">
+      </section>
+
+    </section>
+
+    <!-- ================= REGISTRAR ================= -->
+    <section class="view" id="view-registrar">
+      <h1 class="page-title">Registrar venta</h1>
+
+      <section class="card">
+        <p class="eyebrow">Nueva venta</p>
+        <form id="ventaForm" onsubmit="return registrarVenta(event)">
+          <label for="fNombre">Nombre del producto</label>
+          <input type="text" id="fNombre" list="feedProductosList" placeholder="Ej. Audífonos inalámbricos" autocomplete="off" oninput="buscarProductoFeed()" required>
+          <datalist id="feedProductosList"></datalist>
+
+          <div class="costo-venta-row">
+            <div>
+              <label for="fCosto">Costo del producto</label>
+              <div class="input-wrap">
+                <span class="prefix">S/</span>
+                <input type="number" id="fCosto" class="with-prefix" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+            </div>
+            <div>
+              <label for="fVenta">Precio de venta</label>
+              <div class="input-wrap">
+                <span class="prefix">S/</span>
+                <input type="number" id="fVenta" class="with-prefix" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+            </div>
+          </div>
+          <div class="field-error" id="formError">La venta es menor al costo — la ganancia será negativa.</div>
+
+          <button type="submit" class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Registrar venta
+          </button>
+        </form>
+      </section>
+
+      <section class="card" id="detalleCard" style="display:none;">
+        <p class="eyebrow">Detalle automático</p>
+        <div class="detail-title" id="detalleNombre">—</div>
+        <div class="detail-sub" id="detalleFecha">—</div>
+
+        <div class="split-bar" id="detalleSplitBar"></div>
+        <div class="split-legend" id="detalleSplitLegend"></div>
+
+        <div class="detail-grid">
+          <div class="stat-box wide">
+            <div class="k">Ganancia de esta venta</div>
+            <div class="v" id="detalleGanancia">S/ 0.00</div>
+          </div>
+          <div class="stat-box"><div class="k">Reinvertir</div><div class="v" id="detalleReinvertir">S/ 0.00</div></div>
+          <div class="stat-box"><div class="k">Imprevistos</div><div class="v" id="detalleImprevistos">S/ 0.00</div></div>
+          <div class="stat-box"><div class="k">Ahorro</div><div class="v" id="detalleAhorro">S/ 0.00</div></div>
+          <div class="stat-box"><div class="k">Invertir</div><div class="v" id="detalleInvertir">S/ 0.00</div></div>
+          <div class="stat-box"><div class="k">Sueldo</div><div class="v" id="detalleSueldo">S/ 0.00</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Historial de ventas</p>
+        <div id="historialList"></div>
+      </section>
+
+    </section>
+
+    <!-- ================= CATEGORIAS (reinvertir, imprevistos, ahorro, invertir, sueldo) ================= -->
+    <section class="view" id="view-categorias">
+      <div class="cat-pills" id="catPills"></div>
+      <div id="catContent"></div>
+    </section>
+
+    <!-- ================= AGREGAR DINERO ================= -->
+    <section class="view" id="view-dinero">
+      <h1 class="page-title">Agregar dinero</h1>
+      <div id="dineroContent"></div>
+    </section>
+
+    <!-- ================= CONFIGURACIÓN ================= -->
+    <section class="view" id="view-config">
+      <h1 class="page-title">⚙️ Configuración</h1>
+
+      <section class="card">
+        <div class="section-header" style="margin:0 0 6px;">
+          <p class="eyebrow" style="margin:0;">Distribución de ganancias</p>
+          <button class="bank-lock-btn" id="pctLockBtn" onclick="togglePctLock()" aria-label="Bloquear distribución">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 9-3"/></svg>
+          </button>
+        </div>
+        <p style="font-size:12px; color:var(--text-dim); margin:0 0 4px; line-height:1.5;">Ajusta el porcentaje de la ganancia que se destina a cada sección. Se aplicará a las próximas ventas que registres.</p>
+
+        <div id="pctRows"></div>
+
+        <div class="pct-sum" id="pctSum">
+          <span class="lbl">Suma total</span>
+          <span class="val" id="pctSumVal">100%</span>
+        </div>
+        <div class="field-error" id="pctError">La suma de los porcentajes debe ser exactamente 100%.</div>
+        <p class="bank-lock-note" id="pctLockNote" style="display:none;">Bloqueado — toca el candado para editar la distribución.</p>
+        <button class="btn btn-primary" id="pctSaveBtn" onclick="guardarDistribucion()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar distribución
+        </button>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Feed de productos</p>
+        <p style="font-size:12px; color:var(--text-dim); margin:0 0 12px; line-height:1.5;">Pega la URL del feed de tu tienda (JSON) para traer tus productos. Luego, en "Nueva venta" podrás buscar el producto por nombre y el precio de venta se completará solo. Depende de que el sitio permita solicitudes externas (CORS).</p>
+
+        <label for="feedUrl">URL del feed</label>
+        <div class="input-wrap">
+          <input type="text" id="feedUrl" placeholder="https://tutienda.com/products.json" style="padding-left:14px;">
+        </div>
+        <button class="btn btn-ghost" style="margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="cargarFeed()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Cargar productos
+        </button>
+
+        <div id="feedStatus"></div>
+      </section>
+    </section>
+
+    <!-- ================= DONACIONES ================= -->
+    <section class="view" id="view-donaciones">
+      <h1 class="page-title">💛 Apóyanos</h1>
+
+      <section class="card">
+        <p class="eyebrow">Donar</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 16px; line-height:1.5;">Se abrirá PayPal en una nueva pestaña para que elijas el monto que quieras donar.</p>
+        <a href="https://www.paypal.com/donate/?business=aron7op@gmail.com&currency_code=USD" target="_blank" rel="noopener" class="btn btn-primary" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+          Donar con PayPal
+        </a>
+        <p style="font-size:11px; color:var(--text-faint); margin:14px 0 0; line-height:1.5;">Las donaciones se envían a aron7op@gmail.com por PayPal. ¡Gracias por tu apoyo! 💛</p>
+      </section>
+
+      <section class="card">
+        <p class="eyebrow">Otras formas de apoyar</p>
+        <p style="font-size:12.5px; color:var(--text-dim); margin:0; line-height:1.5;">Comparte 7Cash con otros vendedores, o déjanos tu sugerencia desde Ajustes. ¡Gracias por tu apoyo! 💛</p>
+      </section>
+    </section>
+
+    <!-- ================= LOGIN / CUENTA ================= -->
+    <section class="view" id="view-login">
+      <h1 class="page-title">👤 Mi cuenta</h1>
+
+      <div id="loginLoggedOut">
+        <section class="card">
+          <svg class="login-illus" viewBox="0 0 104 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="loginGrad" x1="4" y1="4" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="var(--gold-soft)"/>
+                <stop offset="1" stop-color="var(--gold)"/>
+              </linearGradient>
+            </defs>
+            <circle cx="52" cy="52" r="50" fill="url(#loginGrad)"/>
+            <circle cx="52" cy="41" r="15" fill="rgba(255,255,255,0.92)"/>
+            <path d="M20 90c3-19 19-28 32-28s29 9 32 28c-9 8-21 12-32 12s-23-4-32-12z" fill="rgba(255,255,255,0.92)"/>
+            <circle cx="83" cy="81" r="18" fill="var(--emerald)" stroke="var(--bg-elev)" stroke-width="4"/>
+            <g transform="translate(74,72) scale(0.75)">
+              <rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          </svg>
+          <p class="eyebrow" style="text-align:center;">Iniciar sesión</p>
+          <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 18px; line-height:1.5; text-align:center;">Regístrate o inicia sesión con tu cuenta de Google para guardar tu información.</p>
+
+          <div id="googleBtnContainer" style="display:flex; justify-content:center; min-height:44px;"></div>
+
+          <button class="btn btn-ghost" style="margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="simulateGoogleLogin()">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20.4H24v7.2h11.3C33.6 32 29.2 34.8 24 34.8c-6 0-10.9-4.9-10.9-10.9S18 13 24 13c2.8 0 5.3 1 7.2 2.8l5.4-5.4C33.4 7.2 28.9 5.4 24 5.4 13.5 5.4 5 13.9 5 24.4S13.5 43.4 24 43.4c9.7 0 18.6-7.1 18.6-19.4 0-1.2-.1-2.3-.3-3.5z"/><path fill="#FF3D00" d="m6.9 14.7 6 4.4C14.7 15.9 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.4-5.4C33.4 7.2 28.9 5.4 24 5.4c-7.6 0-14.1 4.3-17.1 10.6z"/><path fill="#4CAF50" d="M24 43.4c4.8 0 9.2-1.8 12.5-4.8l-5.8-4.9c-1.9 1.3-4.3 2-6.7 2-5.2 0-9.6-2.8-11.3-7l-6 4.6c3 6.1 9.4 10.1 17.3 10.1z"/><path fill="#1976D2" d="M43.6 20.5H42V20.4H24v7.2h11.3c-.8 2.4-2.4 4.4-4.5 5.8l5.8 4.9c-.4.4 6.4-4.7 6.4-14.9 0-1.2-.1-2.3-.3-3.5z"/></svg>
+            Continuar con Google (demo)
+          </button>
+
+          <p style="font-size:11px; color:var(--text-faint); margin:16px 0 0; line-height:1.5;">Nota para el dueño de la app: para activar el botón real de Google, crea un ID de cliente OAuth en Google Cloud Console y reemplaza <code>GOOGLE_CLIENT_ID</code> en el script. Mientras tanto, el botón "demo" simula el ingreso.</p>
+        </section>
+      </div>
+
+      <div id="loginLoggedIn" style="display:none;">
+        <section class="card" style="text-align:center;">
+          <img id="loginAvatar" alt="" style="width:76px; height:76px; border-radius:50%; margin:6px auto 14px; display:none; border:3px solid var(--gold-soft);">
+          <div id="loginAvatarPlaceholder" style="width:76px; height:76px; border-radius:50%; margin:6px auto 14px; background:linear-gradient(150deg, var(--emerald), #146059); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Baloo 2',sans-serif; font-size:26px; font-weight:700;">?</div>
+          <div class="detail-title" id="loginNombre" style="font-size:18px;">—</div>
+          <div class="detail-sub" id="loginCorreo">—</div>
+          <button class="btn btn-ghost" style="margin-top:18px;" onclick="cerrarSesion()">Cerrar sesión</button>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="bottomnav">
+    <div class="bottomnav-inner" id="bottomNavInner"></div>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ---------------- DATOS (en memoria — usa Descargar/Cargar para conservarlos) ---------------- */
+let productos = [];
+let gastos = { reinvertir: [], imprevistos: [], ahorro: [], invertir: [], sueldo: [] };
+let bancos = { reinvertir: '', imprevistos: '', ahorro: '', invertir: '', sueldo: '' };
+let bancosLocked = { reinvertir: false, imprevistos: false, ahorro: false, invertir: false, sueldo: false };
+let config = { reinvertir: 30, imprevistos: 10, ahorro: 20, invertir: 20, sueldo: 20 };
+let pctLocked = false;
+let feedProductos = [];
+
+const CATS = {
+  reinvertir:  { label:'Reinvertir',  icon:'repeat' },
+  imprevistos: { label:'Imprevistos', icon:'shield' },
+  ahorro:      { label:'Ahorro',      icon:'piggy' },
+  invertir:    { label:'Invertir',    icon:'trend' },
+  sueldo:      { label:'Sueldo',      icon:'wallet' }
+};
+function descCat(key){
+  return key === 'reinvertir'
+    ? 'Costo + ' + config.reinvertir + '% de la ganancia'
+    : config[key] + '% de la ganancia';
+}
+
+const CAT_ORDER = ['reinvertir','imprevistos','ahorro','invertir','sueldo'];
+
+
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  piggy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1"/><path d="M3 12a6 6 0 0 1 6-6h6a4 4 0 0 1 4 4v2c0 3-2.5 5-6 5H9l-3 3v-3a4 4 0 0 1-3-4z"/><circle cx="15" cy="10" r="0.6" fill="currentColor"/></svg>',
+  trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="14 6 21 6 21 13"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-5a2 2 0 0 0 0 4h5"/></svg>',
+  cash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v.01M18 14v.01"/></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></svg>',
+  unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 9-3"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+};
+
+const NAV_TABS = [
+  { id:'resumen', label:'Resumen', icon:'home' },
+  { id:'registrar', label:'Registrar', icon:'plus' },
+  { id:'categorias', label:'Categorías', icon:'grid' },
+  { id:'dinero', label:'Dinero', icon:'cash' },
+  { id:'donaciones', label:'Donar', icon:'heart' },
+  { id:'login', label:'Cuenta', icon:'user' },
+  { id:'config', label:'Ajustes', icon:'settings' }
+];
+
+/* ---------------- CALCULO ---------------- */
+function calcular(costo, venta){
+  const ganancia = venta - costo;
+  return {
+    ganancia,
+    reinvertir: costo + (config.reinvertir / 100) * ganancia,
+    imprevistos: (config.imprevistos / 100) * ganancia,
+    ahorro: (config.ahorro / 100) * ganancia,
+    invertir: (config.invertir / 100) * ganancia,
+    sueldo: (config.sueldo / 100) * ganancia
+  };
+}
+function fmt(n){
+  const sign = n < 0 ? '-' : '';
+  return sign + 'S/ ' + Math.abs(n).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fechaCorta(d){
+  return new Date(d).toLocaleDateString('es-PE', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+
+/* ---------------- NAV ---------------- */
+let activeTab = 'resumen';
+let activeCatSubTab = 'reinvertir';
+
+function buildNav(){
+  const el = document.getElementById('bottomNavInner');
+  el.innerHTML = NAV_TABS.map(t => `
+    <button class="navbtn ${t.id===activeTab?'active':''}" onclick="setTab('${t.id}')" data-tab="${t.id}">
+      ${ICONS[t.icon]}
+      <span>${t.label}</span>
+    </button>
+  `).join('');
+}
+
+function setTab(id){
+  activeTab = id;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.getElementById('content').scrollTop = 0;
+  if (id === 'resumen') renderResumen();
+  else if (id === 'registrar') renderResumen();
+  else if (id === 'dinero') renderDinero();
+  else if (id === 'config') renderConfig();
+  else if (id === 'categorias') renderCategorias();
+  else if (id === 'login') renderLogin();
+}
+
+/* ---------------- CATEGORÍAS: selector de píldoras ---------------- */
+function renderCategorias(){
+  const pills = document.getElementById('catPills');
+  pills.innerHTML = CAT_ORDER.map(key => `
+    <button class="cat-pill ${key===activeCatSubTab ? 'active' : ''}"
+      style="${key===activeCatSubTab ? 'background:var(--c-'+key+');' : ''}"
+      onclick="setCatSubTab('${key}')">
+      ${CATS[key].label}
+    </button>
+  `).join('');
+  renderCategoria(activeCatSubTab);
+}
+
+function setCatSubTab(key){
+  activeCatSubTab = key;
+  renderCategorias();
+}
+
+/* ---------------- REGISTRAR VENTA ---------------- */
+function agregarProducto(nombre, costo, venta){
+  const calc = calcular(costo, venta);
+  productos.push({
+    id: Date.now() + Math.floor(Math.random()*1000),
+    nombre, costo, venta,
+    fecha: new Date().toISOString(),
+    ...calc
+  });
+  return calc;
+}
+
+function registrarVenta(e){
+  e.preventDefault();
+  const nombre = document.getElementById('fNombre').value.trim();
+  const costo = parseFloat(document.getElementById('fCosto').value);
+  const venta = parseFloat(document.getElementById('fVenta').value);
+  if (!nombre || isNaN(costo) || isNaN(venta) || costo < 0 || venta < 0) return false;
+
+  const calc = agregarProducto(nombre, costo, venta);
+
+  document.getElementById('ventaForm').reset();
+  document.getElementById('formError').style.display = 'none';
+  showToast('Venta registrada — S/ ' + calc.ganancia.toFixed(2) + ' de ganancia');
+  renderResumen();
+  return false;
+}
+
+document.getElementById('fVenta').addEventListener('input', checkNegativo);
+document.getElementById('fCosto').addEventListener('input', checkNegativo);
+function checkNegativo(){
+  const c = parseFloat(document.getElementById('fCosto').value);
+  const v = parseFloat(document.getElementById('fVenta').value);
+  const err = document.getElementById('formError');
+  err.style.display = (!isNaN(c) && !isNaN(v) && v < c) ? 'block' : 'none';
+}
+
+function eliminarProducto(id){
+  productos = productos.filter(p => p.id !== id);
+  showToast('Venta eliminada');
+  renderResumen();
+  if (activeTab === 'categorias') renderCategoria(activeCatSubTab);
+  if (activeTab === 'dinero') renderDinero();
+}
+
+/* ---------------- SPLIT BAR ---------------- */
+function splitBarHTML(p, containerId){
+  const total = p.venta > 0 ? p.venta : 1;
+  const parts = CAT_ORDER.map(k => ({ key:k, val:p[k] }));
+  const bar = parts.map(part => {
+    const pct = Math.max(part.val, 0) / total * 100;
+    return `<div class="split-seg" style="width:${pct}%; background:var(--c-${part.key});"></div>`;
+  }).join('');
+  const legend = parts.map(part => `
+    <div class="item">
+      <span class="dot" style="background:var(--c-${part.key});"></span>
+      ${CATS[part.key].label}<span class="amt">${fmt(part.val)}</span>
+    </div>
+  `).join('');
+  return { bar, legend };
+}
+
+/* ---------------- RENDER: RESUMEN ---------------- */
+function renderResumen(){
+  const count = productos.length;
+  const totalGanancia = productos.reduce((s,p)=>s+p.ganancia,0);
+  const totalVenta = productos.reduce((s,p)=>s+p.venta,0);
+  const totalCosto = productos.reduce((s,p)=>s+p.costo,0);
+
+  document.getElementById('heroGanancia').textContent = fmt(totalGanancia);
+  document.getElementById('heroFoot').textContent = count === 0
+    ? 'Registra tu primera venta para empezar'
+    : (count === 1 ? '1 venta registrada' : count + ' ventas registradas');
+  document.getElementById('statCount').textContent = count;
+  document.getElementById('statVenta').textContent = fmt(totalVenta);
+  document.getElementById('statCosto').textContent = fmt(totalCosto);
+
+  const detalleCard = document.getElementById('detalleCard');
+  if (count > 0){
+    const last = productos[productos.length - 1];
+    detalleCard.style.display = 'block';
+    document.getElementById('detalleNombre').textContent = last.nombre;
+    document.getElementById('detalleFecha').textContent = fechaCorta(last.fecha);
+    document.getElementById('detalleGanancia').textContent = fmt(last.ganancia);
+    document.getElementById('detalleReinvertir').textContent = fmt(last.reinvertir);
+    document.getElementById('detalleImprevistos').textContent = fmt(last.imprevistos);
+    document.getElementById('detalleAhorro').textContent = fmt(last.ahorro);
+    document.getElementById('detalleInvertir').textContent = fmt(last.invertir);
+    document.getElementById('detalleSueldo').textContent = fmt(last.sueldo);
+
+    const { bar, legend } = splitBarHTML(last);
+    document.getElementById('detalleSplitBar').innerHTML = bar;
+    document.getElementById('detalleSplitLegend').innerHTML = legend;
+  } else {
+    detalleCard.style.display = 'none';
+  }
+
+  const list = document.getElementById('historialList');
+  if (count === 0){
+    list.innerHTML = emptyState('box', 'Aún no hay ventas', 'Registra tu primer producto arriba y aquí verás el historial completo.', '--gold');
+  } else {
+    list.innerHTML = [...productos].reverse().map(p => `
+      <div class="hist-card">
+        <div class="hist-top">
+          <div class="hist-icon">${ICONS.box}</div>
+          <div class="hist-mid">
+            <div class="hist-name">${escapeHTML(p.nombre)}</div>
+            <div class="hist-date">${fechaCorta(p.fecha)}</div>
+          </div>
+          <button class="hist-del" onclick="eliminarProducto(${p.id})" aria-label="Eliminar">${ICONS.trash}</button>
+        </div>
+        <div class="hist-stats">
+          <div class="hs"><span class="hs-k">Costo</span><span class="hs-v">${fmt(p.costo)}</span></div>
+          <div class="hs"><span class="hs-k">Venta</span><span class="hs-v">${fmt(p.venta)}</span></div>
+          <div class="hs"><span class="hs-k">Ganancia</span><span class="hs-v" style="color:${p.ganancia<0 ? 'var(--danger)':'var(--emerald)'};">${fmt(p.ganancia)}</span></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderResumenCategorias();
+}
+
+/* ---------------- RESUMEN: vista rápida de categorías (anillos) ---------------- */
+function ringSVG(pct){
+  const r = 21, c = 2 * Math.PI * r;
+  const offset = c - (pct / 100) * c;
+  return `<svg viewBox="0 0 54 54">
+    <circle cx="27" cy="27" r="${r}" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="6"/>
+    <circle cx="27" cy="27" r="${r}" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
+  </svg>`;
+}
+
+function renderResumenCategorias(){
+  const rowsEl = document.getElementById('catRowsQuick');
+  const gridEl = document.getElementById('catQuickGrid');
+  if (!rowsEl || !gridEl) return;
+
+  rowsEl.innerHTML = CAT_ORDER.map(key => `
+    <div class="cat-row-item" onclick="irACategoria('${key}')" style="cursor:pointer;">
+      <div class="cat-row-icon" style="background:var(--c-${key});">${ICONS[CATS[key].icon]}</div>
+      <div class="cat-row-mid">
+        <div class="cat-row-title">${CATS[key].label}</div>
+        <div class="cat-row-sub">${descCat(key)}</div>
+      </div>
+      <div class="cat-row-amt" style="color:var(--c-${key});">${fmt(saldoDisponible(key))}</div>
+    </div>
+  `).join('');
+
+  gridEl.innerHTML = CAT_ORDER.map(key => {
+    const ingresos = totalIngresos(key);
+    const saldo = saldoDisponible(key);
+    const pct = ingresos > 0 ? Math.max(0, Math.min(100, Math.round(saldo / ingresos * 100))) : 0;
+    return `
+      <div class="cat-quick-card" style="background:linear-gradient(155deg, var(--c-${key}), color-mix(in srgb, var(--c-${key}) 55%, #0a0f1c));" onclick="irACategoria('${key}')">
+        <div class="ring-wrap">
+          ${ringSVG(pct)}
+          <div class="ring-pct">${pct}%</div>
+        </div>
+        <div>
+          <div class="cq-title">${CATS[key].label}</div>
+          <div class="cq-sub">${fmt(saldo)} disponible</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function irACategoria(key){
+  activeCatSubTab = key;
+  setTab('categorias');
+}
+
+/* ---------------- CANDADO CUENTA BANCARIA ---------------- */
+function toggleBankLock(key){
+  if (bancosLocked[key]){
+    if (confirm('¿Seguro que quieres desbloquear el nombre de la cuenta bancaria de ' + CATS[key].label + ' para editarlo o borrarlo?')){
+      bancosLocked[key] = false;
+      renderCategoria(key);
+    }
+    return;
+  }
+  if (!bancos[key].trim()){
+    showToast('Escribe un nombre antes de bloquear');
+    return;
+  }
+  bancosLocked[key] = true;
+  showToast('Cuenta bancaria bloqueada');
+  renderCategoria(key);
+}
+
+/* ---------------- RENDER: CATEGORIA ---------------- */
+function totalIngresos(key){ return productos.reduce((s,p)=>s+p[key],0); }
+function totalGastos(key){ return gastos[key].reduce((s,g)=>s+g.monto,0); }
+function saldoDisponible(key){ return totalIngresos(key) - totalGastos(key); }
+
+function renderCategoria(key){
+  const meta = CATS[key];
+  const view = document.getElementById('catContent');
+  const items = [...productos].reverse();
+  const gastoItems = [...gastos[key]].reverse();
+  const saldo = saldoDisponible(key);
+
+  view.innerHTML = `
+    <div class="cat-hero" style="background:linear-gradient(155deg, var(--c-${key}), color-mix(in srgb, var(--c-${key}) 55%, #0a0f1c));">
+      <div class="hero-label">${meta.label} disponible</div>
+      <div class="hero-amount">${fmt(saldo)}</div>
+      <div class="hero-foot">${descCat(key)} de cada venta, menos gastos registrados</div>
+    </div>
+
+    <section class="card">
+      <p class="eyebrow">Cuenta bancaria</p>
+      <div class="bank-input-wrap">
+        <div class="bank-icon">${ICONS.wallet}</div>
+        <input type="text" class="bank-input" placeholder="Nombre del banco o cuenta"
+          value="${escapeHTML(bancos[key])}" oninput="bancos['${key}'] = this.value"
+          ${bancosLocked[key] ? 'disabled' : ''}>
+        <button class="bank-lock-btn ${bancosLocked[key] ? 'locked' : ''}" onclick="toggleBankLock('${key}')" aria-label="${bancosLocked[key] ? 'Desbloquear cuenta bancaria' : 'Bloquear cuenta bancaria'}">
+          ${bancosLocked[key] ? ICONS.lock : ICONS.unlock}
+        </button>
+      </div>
+      ${bancosLocked[key] ? '<p class="bank-lock-note">Bloqueado — toca el candado para editar o borrar.</p>' : ''}
+    </section>
+
+    <section class="card">
+      <p class="eyebrow">Ingresos · aporte por producto</p>
+      <div class="cat-list">
+        ${items.length === 0
+          ? emptyState(meta.icon, 'Todavía nada aquí', 'Cuando registres una venta, su aporte a ' + meta.label.toLowerCase() + ' aparecerá en esta lista.', '--c-' + key)
+          : items.map(p => `
+            <div class="hist-item">
+              <div class="hist-icon" style="color:var(--c-${key});">${ICONS[meta.icon]}</div>
+              <div class="hist-mid">
+                <div class="hist-name">${escapeHTML(p.nombre)}</div>
+                <div class="hist-date">${fechaCorta(p.fecha)}</div>
+              </div>
+              <div class="hist-right">
+                <div class="hist-gan" style="color:var(--c-${key});">${fmt(p[key])}</div>
+              </div>
+            </div>
+          `).join('')
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="gasto-toggle-row">
+        <p class="eyebrow" style="margin:0;">Gastos</p>
+        <button class="btn-add-gasto" onclick="toggleGastoForm('${key}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Registrar gasto
+        </button>
+      </div>
+
+      <form class="gasto-form" id="gastoForm-${key}" onsubmit="return registrarGasto(event, '${key}')">
+        <label for="gNombre-${key}">Nombre del gasto</label>
+        <input type="text" id="gNombre-${key}" placeholder="Ej. Compra de materiales" required>
+        <div class="gasto-row-inputs">
+          <div style="flex:1;">
+            <label for="gMonto-${key}">Monto</label>
+            <div class="input-wrap">
+              <span class="prefix">S/</span>
+              <input type="number" id="gMonto-${key}" class="with-prefix" step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+          </div>
+        </div>
+        <div class="field-error" id="gastoError-${key}">No tienes suficiente saldo disponible en ${meta.label}.</div>
+        <button type="submit" class="btn btn-primary">Guardar gasto</button>
+      </form>
+
+      <div class="cat-list" style="margin-top:6px;">
+        ${gastoItems.length === 0
+          ? emptyState('cash', 'Sin gastos registrados', 'Los gastos que hagas con el dinero de ' + meta.label.toLowerCase() + ' se descontarán del saldo disponible y aparecerán aquí.', '--c-' + key)
+          : gastoItems.map(g => `
+            <div class="gasto-item">
+              <div class="gasto-icon">${ICONS.cash}</div>
+              <div class="hist-mid">
+                <div class="hist-name">${escapeHTML(g.nombre)}</div>
+                <div class="hist-date">${fechaCorta(g.fecha)}</div>
+              </div>
+              <div class="hist-right">
+                <div class="hist-gan neg">-${fmt(g.monto)}</div>
+              </div>
+              <button class="hist-del" onclick="eliminarGasto('${key}', ${g.id})" aria-label="Eliminar gasto">${ICONS.trash}</button>
+            </div>
+          `).join('')
+        }
+      </div>
+    </section>
+  `;
+}
+
+function toggleGastoForm(key){
+  document.getElementById('gastoForm-' + key).classList.toggle('open');
+}
+
+function registrarGasto(e, key){
+  e.preventDefault();
+  const nombre = document.getElementById('gNombre-' + key).value.trim();
+  const monto = parseFloat(document.getElementById('gMonto-' + key).value);
+  const errorEl = document.getElementById('gastoError-' + key);
+  if (!nombre || isNaN(monto) || monto <= 0) return false;
+
+  if (monto > saldoDisponible(key)){
+    errorEl.style.display = 'block';
+    return false;
+  }
+  errorEl.style.display = 'none';
+
+  gastos[key].push({
+    id: Date.now(),
+    nombre,
+    monto,
+    fecha: new Date().toISOString()
+  });
+
+  showToast('Gasto registrado en ' + CATS[key].label);
+  renderCategoria(key);
+  return false;
+}
+
+function eliminarGasto(key, id){
+  gastos[key] = gastos[key].filter(g => g.id !== id);
+  showToast('Gasto eliminado');
+  renderCategoria(key);
+}
+
+/* ---------------- RENDER: AGREGAR DINERO ---------------- */
+function renderDinero(){
+  const el = document.getElementById('dineroContent');
+  if (productos.length === 0){
+    el.innerHTML = `<section class="card">${emptyState('cash', 'Nada que depositar todavía', 'Registra una venta en Resumen y aquí verás exactamente cuánto colocar en tu cuenta bancaria, por cada categoría, para ese producto.', '--emerald')}</section>`;
+    return;
+  }
+  const p = productos[productos.length - 1];
+  const { bar } = splitBarHTML(p);
+
+  el.innerHTML = `
+    <div class="cat-badge">${ICONS.box} Última venta: <strong style="color:var(--text);">&nbsp;${escapeHTML(p.nombre)}</strong></div>
+    <section class="card">
+      <p class="eyebrow">Reparto para esta venta</p>
+      <p style="font-size:12.5px; color:var(--text-dim); margin:0 0 4px; line-height:1.5;">
+        Esto es lo que debes colocar en tu cuenta bancaria — por sección — solo por la venta de <strong style="color:var(--text);">${escapeHTML(p.nombre)}</strong> (${fmt(p.venta)}).
+      </p>
+      <div class="split-bar">${bar}</div>
+
+      ${CAT_ORDER.map(k => `
+        <div class="money-row">
+          <div class="money-left">
+            <span class="money-dot" style="background:var(--c-${k});"></span>
+            <div>
+              <div class="money-label">${CATS[k].label}</div>
+              <div class="money-desc">${descCat(k)}</div>
+            </div>
+          </div>
+          <div class="money-amt" style="color:var(--c-${k});">${fmt(p[k])}</div>
+        </div>
+      `).join('')}
+
+      <div class="total-row">
+        <div class="money-label">Total a depositar</div>
+        <div class="money-amt">${fmt(p.reinvertir + p.imprevistos + p.ahorro + p.invertir + p.sueldo)}</div>
+      </div>
+    </section>
+  `;
+}
+
+/* ---------------- RENDER: CONFIGURACIÓN ---------------- */
+function renderConfig(){
+  const rows = document.getElementById('pctRows');
+  rows.innerHTML = CAT_ORDER.map(key => `
+    <div class="pct-row">
+      <div class="pct-label">
+        <span class="pct-dot" style="background:var(--c-${key});"></span>
+        ${CATS[key].label}
+      </div>
+      <div class="pct-input-wrap">
+        <input type="number" class="pct-input" id="pct-${key}" min="0" max="100" step="1"
+          value="${config[key]}" oninput="actualizarSumaPct()" ${pctLocked ? 'disabled' : ''}>
+        <span class="pct-suffix">%</span>
+      </div>
+    </div>
+  `).join('');
+  actualizarSumaPct();
+  document.getElementById('pctError').style.display = 'none';
+
+  const lockBtn = document.getElementById('pctLockBtn');
+  lockBtn.classList.toggle('locked', pctLocked);
+  lockBtn.innerHTML = pctLocked ? ICONS.lock : ICONS.unlock;
+  lockBtn.setAttribute('aria-label', pctLocked ? 'Desbloquear distribución' : 'Bloquear distribución');
+  document.getElementById('pctLockNote').style.display = pctLocked ? 'block' : 'none';
+  const saveBtn = document.getElementById('pctSaveBtn');
+  saveBtn.disabled = pctLocked;
+  saveBtn.style.opacity = pctLocked ? '0.5' : '1';
+  saveBtn.style.pointerEvents = pctLocked ? 'none' : 'auto';
+
+  renderFeedDatalist();
+}
+
+function togglePctLock(){
+  if (pctLocked){
+    if (confirm('¿Seguro que quieres desbloquear la distribución de ganancias para editarla?')){
+      pctLocked = false;
+      renderConfig();
+    }
+    return;
+  }
+  const suma = sumaPctActual();
+  if (suma !== 100){
+    showToast('La suma debe ser 100% antes de bloquear');
+    return;
+  }
+  pctLocked = true;
+  showToast('Distribución bloqueada');
+  renderConfig();
+}
+
+function sumaPctActual(){
+  return CAT_ORDER.reduce((s,key) => s + (parseFloat(document.getElementById('pct-' + key).value) || 0), 0);
+}
+
+function actualizarSumaPct(){
+  const suma = sumaPctActual();
+  const box = document.getElementById('pctSum');
+  document.getElementById('pctSumVal').textContent = suma + '%';
+  box.classList.toggle('bad', suma !== 100);
+}
+
+function guardarDistribucion(){
+  if (pctLocked){
+    showToast('Desbloquea la distribución para editarla');
+    return;
+  }
+  const suma = sumaPctActual();
+  const errorEl = document.getElementById('pctError');
+  if (suma !== 100){
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
+  CAT_ORDER.forEach(key => {
+    config[key] = parseFloat(document.getElementById('pct-' + key).value) || 0;
+  });
+  showToast('Distribución guardada — se aplicará a tus próximas ventas');
+}
+
+/* ---------------- FEED DE PRODUCTOS ---------------- */
+function normalizarFeed(data){
+  let lista = [];
+  if (Array.isArray(data)) lista = data;
+  else if (data && Array.isArray(data.products)) lista = data.products;
+  else if (data && Array.isArray(data.items)) lista = data.items;
+  else if (data && Array.isArray(data.productos)) lista = data.productos;
+  else return [];
+
+  return lista.map(item => {
+    const nombre = item.nombre || item.name || item.title || item.producto || 'Producto sin nombre';
+    let precio = item.venta ?? item.price ?? item.precio ?? item.precio_venta;
+    if (precio === undefined && Array.isArray(item.variants) && item.variants[0]){
+      precio = item.variants[0].price;
+    }
+    precio = parseFloat(precio);
+    return { nombre: String(nombre), venta: isNaN(precio) ? '' : precio };
+  }).filter(p => p.nombre);
+}
+
+async function cargarFeed(){
+  const url = document.getElementById('feedUrl').value.trim();
+  const statusEl = document.getElementById('feedStatus');
+  if (!url){
+    statusEl.className = 'feed-status error';
+    statusEl.textContent = 'Ingresa primero la URL de tu feed.';
+    return;
+  }
+  statusEl.className = 'feed-status';
+  statusEl.textContent = 'Cargando productos…';
+
+  try{
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const lista = normalizarFeed(data);
+    if (lista.length === 0){
+      statusEl.className = 'feed-status error';
+      statusEl.textContent = 'Se cargó la URL, pero no se reconoció ningún producto. Se espera JSON con una lista de productos (nombre y precio).';
+      feedProductos = [];
+      renderFeedDatalist();
+      return;
+    }
+    feedProductos = lista;
+    statusEl.className = 'feed-status success';
+    statusEl.textContent = lista.length + ' producto(s) cargados. Ya puedes buscarlos por nombre en "Nueva venta".';
+    renderFeedDatalist();
+  } catch(err){
+    statusEl.className = 'feed-status error';
+    statusEl.textContent = 'No se pudo cargar el feed. Verifica la URL o que el sitio permita solicitudes externas (CORS).';
+    feedProductos = [];
+  }
+}
+
+/* Datalist para autocompletar "Nombre del producto" en Nueva venta */
+function renderFeedDatalist(){
+  const dl = document.getElementById('feedProductosList');
+  if (!dl) return;
+  dl.innerHTML = feedProductos.map(p => `<option value="${escapeHTML(p.nombre)}"></option>`).join('');
+}
+
+/* Si el nombre escrito coincide con un producto del feed, autocompleta el precio de venta */
+function buscarProductoFeed(){
+  const nombre = document.getElementById('fNombre').value.trim().toLowerCase();
+  if (!nombre) return;
+  const match = feedProductos.find(p => p.nombre.trim().toLowerCase() === nombre);
+  if (match && match.venta !== ''){
+    const fVenta = document.getElementById('fVenta');
+    if (!fVenta.value) fVenta.value = match.venta;
+    checkNegativo();
+  }
+}
+
+/* ---------------- HELPERS ---------------- */
+function emptyState(icon, title, sub, colorVar){
+  colorVar = colorVar || '--gold';
+  const ic = ICONS[icon] || ICONS.box;
+  return `
+    <div class="empty">
+      <div class="empty-blob" style="background:radial-gradient(circle at 32% 28%, color-mix(in srgb, var(${colorVar}) 34%, white 66%), color-mix(in srgb, var(${colorVar}) 15%, transparent));">
+        <svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="39" fill="none" stroke="var(${colorVar})" stroke-width="1.6" stroke-dasharray="3 7" opacity="0.55"/><circle cx="72" cy="14" r="3" fill="var(${colorVar})" opacity="0.6"/><circle cx="10" cy="66" r="2.2" fill="var(${colorVar})" opacity="0.45"/></svg>
+        <div class="ico" style="color:var(${colorVar});">${ic}</div>
+      </div>
+      <div class="t">${title}</div>
+      <div class="s">${sub}</div>
+    </div>
+  `;
+}
+function escapeHTML(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function toggleBackupMenu(){
+  const c = document.getElementById('backupCard');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+}
+
+/* ---------------- RESPALDO (exportar / importar) ---------------- */
+function exportarDatos(){
+  const payload = { productos, gastos, bancos, bancosLocked, config };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '7cash_respaldo_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Respaldo descargado');
+}
+function importarDatos(evt){
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if (Array.isArray(data)){
+        // Formato antiguo: solo un arreglo de productos
+        productos = data;
+      } else if (data && Array.isArray(data.productos)){
+        productos = data.productos;
+        gastos = Object.assign({ reinvertir: [], imprevistos: [], ahorro: [], invertir: [], sueldo: [] }, data.gastos || {});
+        bancos = Object.assign({ reinvertir: '', imprevistos: '', ahorro: '', invertir: '', sueldo: '' }, data.bancos || {});
+        bancosLocked = Object.assign({ reinvertir: false, imprevistos: false, ahorro: false, invertir: false, sueldo: false }, data.bancosLocked || {});
+        config = Object.assign({ reinvertir: 30, imprevistos: 10, ahorro: 20, invertir: 20, sueldo: 20 }, data.config || {});
+      } else {
+        throw new Error('formato inválido');
+      }
+      showToast('Datos cargados: ' + productos.length + ' venta(s)');
+      renderResumen();
+      if (activeTab === 'categorias') renderCategoria(activeCatSubTab);
+    } catch(err){
+      showToast('No se pudo leer el archivo');
+    }
+    evt.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- LOGIN / CUENTA (Google) ---------------- */
+// Para activar el inicio de sesión real con Google:
+// 1) Crea un ID de cliente OAuth en https://console.cloud.google.com/apis/credentials
+// 2) Reemplaza el valor de abajo con tu Client ID
+// 3) Agrega en el <head> del HTML la etiqueta: script src = https://accounts.google.com/gsi/client (async)
+const GOOGLE_CLIENT_ID = 'GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+let currentUser = null;
+
+function initGoogleButton(){
+  const container = document.getElementById('googleBtnContainer');
+  if (!container) return;
+  if (window.google && google.accounts && google.accounts.id && !GOOGLE_CLIENT_ID.startsWith('GOOGLE_CLIENT_ID')){
+    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+    google.accounts.id.renderButton(container, { theme: 'outline', size: 'large', shape: 'pill', width: 260 });
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+function handleGoogleCredential(response){
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    currentUser = { nombre: payload.name, correo: payload.email, foto: payload.picture };
+    showToast('Sesión iniciada con Google');
+    renderLogin();
+  } catch(err){
+    showToast('No se pudo iniciar sesión');
+  }
+}
+
+function simulateGoogleLogin(){
+  currentUser = { nombre: 'Usuario Demo', correo: 'demo@gmail.com', foto: '' };
+  showToast('Sesión iniciada (demo)');
+  renderLogin();
+}
+
+function cerrarSesion(){
+  currentUser = null;
+  if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+  showToast('Sesión cerrada');
+  renderLogin();
+}
+
+function renderLogin(){
+  const loggedOut = document.getElementById('loginLoggedOut');
+  const loggedIn = document.getElementById('loginLoggedIn');
+  if (!loggedOut || !loggedIn) return;
+
+  if (currentUser){
+    loggedOut.style.display = 'none';
+    loggedIn.style.display = 'block';
+    document.getElementById('loginNombre').textContent = currentUser.nombre;
+    document.getElementById('loginCorreo').textContent = currentUser.correo;
+    const avatar = document.getElementById('loginAvatar');
+    const placeholder = document.getElementById('loginAvatarPlaceholder');
+    if (currentUser.foto){
+      avatar.src = currentUser.foto;
+      avatar.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      avatar.style.display = 'none';
+      placeholder.style.display = 'flex';
+      placeholder.textContent = currentUser.nombre.charAt(0).toUpperCase();
+    }
+  } else {
+    loggedOut.style.display = 'block';
+    loggedIn.style.display = 'none';
+    initGoogleButton();
+  }
+}
+
+/* ---------------- INIT ---------------- */
+buildNav();
+renderResumen();
+renderFeedDatalist();
+renderLogin();
+</script>
+</body>
+</html>

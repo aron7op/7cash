@@ -1,0 +1,6 @@
+{
+	"appId": "com.sietecash.app",
+	"appName": "7Cash",
+	"webDir": "www",
+	"bundledWebRuntime": false
+}

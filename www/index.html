@@ -1648,8 +1648,22 @@ async function cargarDeNube(){
 // navegador normal (sin Capacitor) el botón mostrará un aviso.
 let currentUser = null;
 
-async function iniciarSesionGoogle(){
+let googleAuthInicializado = false;
+
+async function asegurarGoogleAuthInicializado(){
   const GoogleAuth = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth;
+  if (!GoogleAuth || googleAuthInicializado) return GoogleAuth;
+  try {
+    await GoogleAuth.initialize();
+    googleAuthInicializado = true;
+  } catch(err){
+    console.error('No se pudo inicializar GoogleAuth', err);
+  }
+  return GoogleAuth;
+}
+
+async function iniciarSesionGoogle(){
+  const GoogleAuth = await asegurarGoogleAuthInicializado();
   if (!GoogleAuth){
     showToast('El login de Google solo funciona dentro de la app instalada');
     return;
